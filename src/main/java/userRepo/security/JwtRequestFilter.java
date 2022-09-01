@@ -1,5 +1,6 @@
 package userRepo.security;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -25,6 +26,14 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         RestTemplate restTemplate = new RestTemplate();
         String username = restTemplate.getForObject("http://localhost:8080/validateToken?token=" + requestTokenHeader, String.class);
+        String role = restTemplate.getForObject("http://localhost:8080/getClaims?token=" + requestTokenHeader, String.class);
+
+        if ((!request.getMethod().contentEquals(HttpMethod.GET.toString())) && (!role.contentEquals("admin"))) {
+            response.setStatus(403);
+            response.getWriter().print(username + " is not authorized for " + request.getMethod() + " /users");
+            response.getWriter().flush();
+            return;
+        }
 
         if (username != null) {
             UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
